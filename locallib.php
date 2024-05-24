@@ -256,48 +256,103 @@ function attendance_has_logs_for_status($statusid) {
  */
 function attendance_form_sessiondate_selector (MoodleQuickForm $mform) {
     $attconfig = get_config('attendance');
+    //check if the setting is set and bigger then 0
+    $steps = ($attconfig->defaultsessionminuteslength > 0? $attconfig->defaultsessionminuteslength : 1) ?? 1;
+    //initialize start and end time values
+    $selectedHourStart = 0;
+    $selectedMinuteStart = 0;
+    $selectedHourEnd = 0;
+    $selectedMinuteEnd = 0;
+
+    if($attconfig->defaultsessiontimesetenabled) {
+        //get the current server time
+        $currentTime = new DateTime("now", core_date::get_user_timezone_object());
+
+        //set the start time to current time
+        $selectedHourStart = (int)$currentTime->format('H');
+        $selectedMinuteStart = (int)$currentTime->format('i');
+
+        //check if end time should set too
+        if($attconfig->defaultsessiontimeendsetenabled) {
+            //init test time to current time
+            $testTimeHour = $selectedHourStart;
+            $testTimeMinute = $selectedMinuteStart;
+
+            if($attconfig->defaultcustomsessionblocks != '')
+            {
+                //explode textarea to lines
+                $lines = explode("\n", str_replace("\r", "", $attconfig->defaultcustomsessionblocks));
+                foreach ($lines as $line)
+                {
+                    //explode line to start and end time
+                    $startEndTime = explode("-", $line);
+
+                    //explode start time to hour and minute
+                    $hourMinutesStart = explode(":", $startEndTime[0]);
+
+                    //explode start time to hour and minute
+                    $hourMinutesEnd = explode(":", $startEndTime[1]);
+
+                    //sets the start hour of start time
+                    $selectedHourStart = (int)$hourMinutesStart[0];
+                    //sets the start minute of start time
+                    $selectedMinuteStart = (int)$hourMinutesStart[1];
+                    //sets the start hour of end time
+                    $selectedHourEnd = (int)$hourMinutesEnd[0];
+                    //sets the start minute of end time
+                    $selectedMinuteEnd = (int)$hourMinutesEnd[1];
+
+                    //breaks if the current time is between start time and end time
+                    if($testTimeHour <= $selectedHourStart && $testTimeMinute <= $selectedMinuteStart || $testTimeHour <= $selectedHourEnd && $testTimeMinute <= $selectedMinuteEnd)
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                $currentTime = $currentTime->add(new DateInterval('PT' . $attconfig->defaultsessiontimeend . 'M'));
+                $selectedHourEnd = (int)$currentTime->format('H');
+                $selectedMinuteEnd = (int)$currentTime->format('i');
+            }
+        }
+    }
+
+    $mform->addElement('date_selector', 'sessiondate', get_string('sessiondate', 'attendance'));
 
     //sets the default values for time select
     for ($i = 0; $i <= 23; $i++) {
         $hours[$i] = sprintf("%02d", $i);
     }
-    for ($i = 0; $i < 60; $i++) {
+    //if the calculated minutes are not in the selected steps then reset to $i++
+    for ($i = 0; $i < 60; $i += ($selectedMinuteStart % $steps != 0 ? 1 : $steps)) {
         $minutes[$i] = sprintf("%02d", $i);
     }
 
-    $currentTime = new DateTime("now", core_date::get_user_timezone_object());
+    $fromStart = $mform->createElement('select', 'starthour', get_string('hour', 'form'), $hours, false, true);
+    $fromStart->setSelected($selectedHourStart);
+    $toStart = $mform->createElement('select', 'startminute', get_string('minute', 'form'), $minutes, false, true);
+    $toStart->setSelected($selectedMinuteStart);
 
-    $mform->addElement('date_selector', 'sessiondate', get_string('sessiondate', 'attendance'));
+    $fromEnd = $mform->createElement('select', 'endhour', get_string('hour', 'form'), $hours, false, true);
+    $fromEnd->setSelected($selectedHourEnd);
+    $toEnd = $mform->createElement('select', 'endminute', get_string('minute', 'form'), $minutes, false, true);
+    $toEnd->setSelected($selectedMinuteEnd);
 
     $sesendtime = array();
+    $sesendtime[] =& $mform->createElement('static', 'from', '', get_string('from', 'attendance'));
     if (!right_to_left()) {
-
-        $fromStart = $mform->createElement('select', 'starthour', get_string('hour', 'form'), $hours, false, true);
-        $fromStart->setSelected((int)$currentTime->format('H'));
-        $toStart = $mform->createElement('select', 'startminute', get_string('minute', 'form'), $minutes, false, true);
-        $toStart->setSelected(round(((int)$currentTime->format('i')+5/2)/5)*5);
-
-        $currentTime->add(new DateInterval('PT' . $attconfig->defaultsessiontimeend . 'M'));
-
-        $fromEnd = $mform->createElement('select', 'endhour', get_string('hour', 'form'), $hours, false, true);
-        $fromEnd->setSelected((int)$currentTime->format('H'));
-        $toEnd = $mform->createElement('select', 'endminute', get_string('minute', 'form'), $minutes, false, true);
-        $toEnd->setSelected(round(((int)$currentTime->format('i')+5/2)/5)*5);
-
-        $sesendtime[] =& $mform->createElement('static', 'from', '', get_string('from', 'attendance'));
         $sesendtime[] =& $fromStart;
         $sesendtime[] =& $toStart;
         $sesendtime[] =& $mform->createElement('static', 'to', '', get_string('to', 'attendance'));
         $sesendtime[] =& $fromEnd;
         $sesendtime[] =& $toEnd;
-
     } else {
-        $sesendtime[] =& $mform->createElement('static', 'from', '', get_string('from', 'attendance'));
-        $sesendtime[] =& $mform->createElement('select', 'startminute', get_string('minute', 'form'), $minutes, false, true);
-        $sesendtime[] =& $mform->createElement('select', 'starthour', get_string('hour', 'form'), $hours, false, true);
+        $sesendtime[] =& $toStart;
+        $sesendtime[] =& $fromStart;
         $sesendtime[] =& $mform->createElement('static', 'to', '', get_string('to', 'attendance'));
-        $sesendtime[] =& $mform->createElement('select', 'endminute', get_string('minute', 'form'), $minutes, false, true);
-        $sesendtime[] =& $mform->createElement('select', 'endhour', get_string('hour', 'form'), $hours, false, true);
+        $sesendtime[] =& $toEnd;
+        $sesendtime[] =& $fromEnd;
     }
     $mform->addGroup($sesendtime, 'sestime', get_string('time', 'attendance'), array(' '), true);
 }

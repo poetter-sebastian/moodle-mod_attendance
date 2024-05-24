@@ -64,19 +64,6 @@ if ($ADMIN->fulltree) {
             get_string('rotateqrcodeexpirymargin', 'attendance'),
             get_string('rotateqrcodeexpirymargin_desc', 'attendance'), '2', PARAM_INT));
 
-    $settings->add(new admin_setting_configcheckbox('attendance/enabledefaultsessiontime',
-        get_string('faultsessiontimeenableded', 'attendance'),
-        get_string('faultsessiontimeenableded_desc', 'attendance'), 0));
-
-    $settings->add(new admin_setting_configtext('attendance/defaultsessiontimeend',
-        get_string('defaultsessiontimeend', 'attendance'),
-        get_string('defaultsessiontimeend_desc', 'attendance'), '60', PARAM_INT));
-
-    $settings->add(new admin_setting_configtextarea('attendance/defaultcustomsessionblocks',
-        get_string('defaultcustomsessionblocks', 'attendance'),
-        get_string('defaultcustomsessionblocks_desc', 'attendance'),
-        "", PARAM_RAW));
-
     $settings->add(new admin_setting_configcheckbox('attendance/studentscanmarksessiontime',
         get_string('studentscanmarksessiontime', 'attendance'),
         get_string('studentscanmarksessiontime_desc', 'attendance'), 1));
@@ -172,6 +159,27 @@ if ($ADMIN->fulltree) {
 
     $settings->add(new admin_setting_configcheckbox('attendance/allowupdatestatus_default',
         get_string('allowupdatestatus', 'attendance'), '', 0));
+
+    $settings->add(new admin_setting_configtext('attendance/defaultsessionminuteslength',
+        get_string('defaultsessionminuteslength', 'attendance'),
+        get_string('defaultsessionminuteslength_desc', 'attendance'), '1', PARAM_INT));
+
+    $settings->add(new admin_setting_configcheckbox('attendance/defaultsessiontimesetenabled',
+        get_string('defaultsessiontimesetenabled', 'attendance'),
+        get_string('defaultsessiontimesetenabled_desc', 'attendance'), 0));
+
+    $settings->add(new admin_setting_configcheckbox('attendance/defaultsessiontimeendsetenabled',
+        get_string('defaultsessiontimeendsetenabled', 'attendance'),
+        get_string('defaultsessiontimeendsetenabled_desc', 'attendance'), 0));
+
+    $settings->add(new admin_setting_configtext('attendance/defaultsessiontimeend',
+        get_string('defaultsessiontimeend', 'attendance'),
+        get_string('defaultsessiontimeend_desc', 'attendance'), '60', PARAM_INT));
+
+    $settings->add(new admin_setting_configtextarea('attendance/defaultcustomsessionblocks',
+        get_string('defaultcustomsessionblocks', 'attendance'),
+        get_string('defaultcustomsessionblocks_desc', 'attendance'),
+        "", PARAM_RAW));
 
     $options = attendance_get_automarkoptions();
 
