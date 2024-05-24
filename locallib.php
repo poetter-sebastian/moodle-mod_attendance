@@ -255,9 +255,9 @@ function attendance_has_logs_for_status($statusid) {
  * @param MoodleQuickForm $mform
  */
 function attendance_form_sessiondate_selector (MoodleQuickForm $mform) {
+    $attconfig = get_config('attendance');
 
-    $mform->addElement('date_selector', 'sessiondate', get_string('sessiondate', 'attendance'));
-
+    //sets the default values for time select
     for ($i = 0; $i <= 23; $i++) {
         $hours[$i] = sprintf("%02d", $i);
     }
@@ -265,14 +265,32 @@ function attendance_form_sessiondate_selector (MoodleQuickForm $mform) {
         $minutes[$i] = sprintf("%02d", $i);
     }
 
+    $currentTime = new DateTime("now", core_date::get_user_timezone_object());
+
+    $mform->addElement('date_selector', 'sessiondate', get_string('sessiondate', 'attendance'));
+
     $sesendtime = array();
     if (!right_to_left()) {
+
+        $fromStart = $mform->createElement('select', 'starthour', get_string('hour', 'form'), $hours, false, true);
+        $fromStart->setSelected((int)$currentTime->format('H'));
+        $toStart = $mform->createElement('select', 'startminute', get_string('minute', 'form'), $minutes, false, true);
+        $toStart->setSelected(round(((int)$currentTime->format('i')+5/2)/5)*5);
+
+        $currentTime->add(new DateInterval('PT' . $attconfig->defaultsessiontimeend . 'M'));
+
+        $fromEnd = $mform->createElement('select', 'endhour', get_string('hour', 'form'), $hours, false, true);
+        $fromEnd->setSelected((int)$currentTime->format('H'));
+        $toEnd = $mform->createElement('select', 'endminute', get_string('minute', 'form'), $minutes, false, true);
+        $toEnd->setSelected(round(((int)$currentTime->format('i')+5/2)/5)*5);
+
         $sesendtime[] =& $mform->createElement('static', 'from', '', get_string('from', 'attendance'));
-        $sesendtime[] =& $mform->createElement('select', 'starthour', get_string('hour', 'form'), $hours, false, true);
-        $sesendtime[] =& $mform->createElement('select', 'startminute', get_string('minute', 'form'), $minutes, false, true);
+        $sesendtime[] =& $fromStart;
+        $sesendtime[] =& $toStart;
         $sesendtime[] =& $mform->createElement('static', 'to', '', get_string('to', 'attendance'));
-        $sesendtime[] =& $mform->createElement('select', 'endhour', get_string('hour', 'form'), $hours, false, true);
-        $sesendtime[] =& $mform->createElement('select', 'endminute', get_string('minute', 'form'), $minutes, false, true);
+        $sesendtime[] =& $fromEnd;
+        $sesendtime[] =& $toEnd;
+
     } else {
         $sesendtime[] =& $mform->createElement('static', 'from', '', get_string('from', 'attendance'));
         $sesendtime[] =& $mform->createElement('select', 'startminute', get_string('minute', 'form'), $minutes, false, true);
@@ -1455,4 +1473,9 @@ function attendance_return_passwords($session) {
 
     $sql = 'SELECT * FROM {attendance_rotate_passwords} WHERE attendanceid = ? AND expirytime > ? ORDER BY expirytime ASC';
     return json_encode($DB->get_records_sql($sql, ['attendanceid' => $session->id, time()], $strictness = IGNORE_MISSING));
+}
+
+function round_to_nearest_number()
+{
+
 }
