@@ -274,9 +274,12 @@ function attendance_form_sessiondate_selector (MoodleQuickForm $mform) {
 
         //check if end time should set too
         if($attconfig->defaultsessiontimeendsetenabled) {
+
             //init test time to current time
             $testTimeHour = $selectedHourStart;
             $testTimeMinute = $selectedMinuteStart;
+            //(15:15 => 1515, 9:30 => 930)
+            $truncate = $testTimeHour*100+$testTimeMinute;
 
             if($attconfig->defaultcustomsessionblocks != '')
             {
@@ -303,7 +306,7 @@ function attendance_form_sessiondate_selector (MoodleQuickForm $mform) {
                     $selectedMinuteEnd = (int)$hourMinutesEnd[1];
 
                     //breaks if the current time is between start time and end time
-                    if($testTimeHour <= $selectedHourStart && $testTimeMinute <= $selectedMinuteStart || $testTimeHour <= $selectedHourEnd && $testTimeMinute <= $selectedMinuteEnd)
+                    if($truncate <= $selectedHourStart*100+$selectedMinuteStart || $testTimeHour*100+$testTimeMinute <= $selectedHourEnd*100+$selectedMinuteEnd)
                     {
                         break;
                     }
