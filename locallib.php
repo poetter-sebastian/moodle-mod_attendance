@@ -1532,8 +1532,3 @@ function attendance_return_passwords($session) {
     $sql = 'SELECT * FROM {attendance_rotate_passwords} WHERE attendanceid = ? AND expirytime > ? ORDER BY expirytime ASC';
     return json_encode($DB->get_records_sql($sql, ['attendanceid' => $session->id, time()], $strictness = IGNORE_MISSING));
 }
-
-function round_to_nearest_number()
-{
-
-}
